@@ -4,6 +4,7 @@ import json
 import math
 import random
 import sys
+import traceback
 
 """
 This script contains the hyperparameter parsing, mutation, and random draw logic for the genetic algorithm
@@ -41,8 +42,17 @@ def is_number(s):
     
 # Create parameters from JSON file (main functionality)
 def create_parameters(param_file):
-    with open(param_file) as json_file:
-        data = json.load(json_file)
+    try:
+        with open(param_file) as json_file:
+            data = json.load(json_file)
+    except Exception as e:
+        print("ga_utils.create_parameters(): JSON parse failed in: " +
+              param_file)
+        info = sys.exc_info()
+        s = traceback.format_tb(info[2])
+        print(str(e) + " ... \n" + "".join(s))
+        sys.stdout.flush()
+        exit(1)
 
     params = []
     for item in data:
