@@ -1,8 +1,11 @@
 
 # CFG GraphDRP TEST
 
-export CANDLE_MODEL_TYPE="SINGULARITY"
-export MODEL_NAME=/software/improve/images/GraphDRP.sif  #Lambda
+# export CANDLE_MODEL_TYPE="SINGULARITY"
+# export MODEL_NAME=/software/improve/images/GraphDRP.sif  #Lambda
+
+export MODEL_NAME=graphdrp
+export MODEL_PYTHON_DIR=$HOME/proj/GraphDRP
 
 export PARAM_SET_FILE=graphdrp_param_space-3.json
 
