@@ -1,13 +1,11 @@
 
 # ENV Polaris
 
+# Polaris has a fork() bug- must use python(): 2024-04-02
+# https://docs.alcf.anl.gov/polaris/known-issues
 # CANDLE_MODEL_IMPL=echo
-CANDLE_MODEL_IMPL=app
-
-# CSC249=/lus/grand/projects/CSC249ADOA01
-# ROOT=$CSC249/public/sfw/polaris
-# # SWIFT=$ROOT/swift-t/2023-06-05
-# SWIFT=$ROOT/swift-t/2023-08-31
+# CANDLE_MODEL_IMPL=app
+CANDLE_MODEL_IMPL=py
 
 CANDLE_ECP=/eagle/Candle_ECP
 ROOT=$CANDLE_ECP/sfw
@@ -27,9 +25,4 @@ PY=$CANDLE_ECP/conda/2024-03-12
 
 PATH=$PY/bin:$PATH
 
-# R_HOME=$ROOT/R-4.2.2/lib64/R
-# EQR=$ROOT/EQ-R
-
 module load PrgEnv-nvhpc
-
-# export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}:$R_HOME/lib
