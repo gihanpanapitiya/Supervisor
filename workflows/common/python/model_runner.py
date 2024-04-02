@@ -44,7 +44,7 @@ def import_pkg(framework, model_name):
         e.g., 'nt3_baseline_keras2'
     """
     log("model_name:  " + model_name)
-    module_name = os.getenv("MODEL_PYTHON_SCRIPT")
+
     if framework == "keras":
         framework = framework + "2"
     elif framework == "pytorch":
@@ -53,8 +53,14 @@ def import_pkg(framework, model_name):
         raise ValueError("Framework must either be 'keras' or 'pytorch' " +
                          "got: '{}'".format(framework))
 
+    module_name = os.getenv("MODEL_PYTHON_SCRIPT")
     if module_name is None or module_name == "":
-        module_name = model_name + "_baseline_keras2"
+        # Default to train_improve as of 2024-04-02
+        suffix = "_train_improve"
+        if os.getenv("CANDLE_NAMING") == "1":
+            suffix = "_baseline_keras2"
+        module_name = model_name + suffix
+
     log("module_name: " + module_name)
     pkg = importlib.import_module(module_name)
     return pkg
