@@ -7,7 +7,6 @@ MACHINE="-m pbs"
 
 # Default PROJECT for CANDLE
 export PROJECT=${PROJECT:-CSC249ADOA01}
-
 export QUEUE=${QUEUE:-debug}
 export WALLTIME=${WALLTIME:-00:10:00}
 
