@@ -168,7 +168,6 @@ CMD_LINE_ARGS=( -ga_params=$PARAM_SET_FILE
                 -mut_indpb=$MUT_INDPB
                 -cx_indpb=$CX_INDPB
                 -tournsize=$TOURNSIZE
-                -model_sh=$EMEWS_PROJECT_ROOT/scripts/run_model.sh
                 -model_name=$MODEL_NAME
                 -exp_id=$EXPID
                 -benchmark_timeout=$BENCHMARK_TIMEOUT
