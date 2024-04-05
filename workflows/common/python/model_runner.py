@@ -6,6 +6,7 @@ import importlib
 import json
 import math
 import os
+from os import environ
 import sys
 import time
 import traceback
@@ -15,6 +16,8 @@ from log_tools import *
 from runner_utils import ModelResult
 
 logger = None
+# Use True for debugging, False for performance:
+logFlush = False
 
 print("MODEL RUNNER MODULE")
 sys.stdout.flush()
@@ -44,7 +47,6 @@ def import_pkg(framework, model_name):
         e.g., 'nt3_baseline_keras2'
     """
     log("model_name:  " + model_name)
-
     if framework == "keras":
         framework = framework + "2"
     elif framework == "pytorch":
@@ -67,13 +69,17 @@ def import_pkg(framework, model_name):
 
 
 def log(msg):
-    global logger
+    global logger, logFlush
     logger.info(msg)
+    if logFlush:
+        sys.stdout.flush()
 
 
 def debug(msg):
-    global logger
+    global logger, logFlush
     logger.debug(msg)
+    if logFlush:
+        sys.stdout.flush()
 
 
 def timestamp():
@@ -323,6 +329,8 @@ def run_model(hyper_parameter_map):
 
 def setup_params(pkg, hyper_parameter_map, params_arg):
     params = pkg.initialize_parameters(**params_arg)
+    # If model developer forgets to 'return params', we get None:
+    assert(params is not None)
     logger.debug("PARAM UPDATE START")
     for k, v in hyper_parameter_map.items():
         if k == "dense" or k == "dense_feature_layers":
@@ -336,6 +344,11 @@ def setup_params(pkg, hyper_parameter_map, params_arg):
         logger.debug(str(k) + " = " + str(v))
         params[k] = v
     logger.debug("PARAM UPDATE STOP")
+
+    if ("CANDLE_MODEL_IMPL" in environ and
+        environ["CANDLE_MODEL_IMPL"] == "py"):
+        environ["CUDA_VISIBLE_DEVICES"] = environ["ADLB_RANK_OFFSET"]
+        print("CVD: " + str(os.getenv("CUDA_VISIBLE_DEVICES")))
 
     logger.debug("WRITE_PARAMS START")
     runner_utils.write_params(params, hyper_parameter_map)
@@ -390,8 +403,6 @@ def get_results(history, model_return, epochs_expected):
 if __name__ == "__main__":
     logger = get_logger(logger, "MODEL_RUNNER")
     logger.info("main: RUN START")
-
-    import sys
 
     (
         _,  # The Python program name (unused)
