@@ -14,6 +14,8 @@ try:
   import model_runner
 
   sys.argv = [ 'python' ]
+  # Tell model_runner we are under model_py.swift
+  os.environ['CANDLE_MODEL_IMPL'] = 'py'
 
   model_result = 'NaN'
   outdir = '%s'
