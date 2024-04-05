@@ -14,8 +14,6 @@ try:
   import model_runner
 
   sys.argv = [ 'python' ]
-  import tensorflow
-  from tensorflow import keras
 
   model_result = 'NaN'
   outdir = '%s'
