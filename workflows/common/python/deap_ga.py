@@ -82,15 +82,20 @@ def make_floats(results):
     values = []
     output = {}
     floats = []
+    prefix = "deap_ga.make_floats(): ERROR: "
     for i, token in enumerate(tokens):
         if len(token) == 0:
-            msg = "received: 0-length token at: %i" % i
-            logger.info("ERROR: " + msg)
-            logger.info("       tokens: " + str(tokens))
-            raise Exception("make_floats(): " + msg)
+            msg = prefix + "DEAP received: 0-length token at: %i" % i
+            logger.warn(msg)
+            logger.warn("       tokens: " + str(tokens))
+            raise Exception(" " + msg)
         elif token.lower() == "nan":
             output[i] = "nan"
             NaNs.append(i)
+        elif token.lower() == "exception":
+            msg = prefix + "DEAP received 'EXCEPTION' as result."
+            logger.warn(msg)
+            raise Exception(" " + msg)
         else:
             f = float(token)
             output[i] = f
