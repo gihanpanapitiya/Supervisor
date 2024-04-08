@@ -272,6 +272,7 @@ fi
           -e IGNORE_ERRORS \
           -e CANDLE_DATA_DIR \
           -e CANDLE_MODEL_TYPE \
+          -e CANDLE_FRAMEWORK \
           $WAIT_ARG \
           $EMEWS_PROJECT_ROOT/swift/workflow.swift ${CMD_LINE_ARGS[@]}
 )

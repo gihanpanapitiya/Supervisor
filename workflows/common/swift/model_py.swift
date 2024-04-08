@@ -25,8 +25,7 @@ try:
 
   J = """%s"""
   hyper_parameter_map = json.loads(J)
-  hyper_parameter_map['framework'] = 'keras'
-  hyper_parameter_map['framework'] = 'keras'
+  hyper_parameter_map['framework'] = os.getenv('CANDLE_FRAMEWORK')
   hyper_parameter_map['save'] = '{}/output'.format(outdir)
   hyper_parameter_map['instance_directory'] = outdir
   hyper_parameter_map['model_name'] = '%s'
@@ -34,7 +33,7 @@ try:
   hyper_parameter_map['run_id'] = '%s'
   hyper_parameter_map['timeout'] = %d
 
-  model_result, history = model_runner.run_model(hyper_parameter_map)
+  model_result, history = model_runner.run_wrapper(hyper_parameter_map)
 
 except Exception as e:
   info = sys.exc_info()

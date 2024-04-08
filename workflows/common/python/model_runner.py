@@ -142,23 +142,20 @@ def stop_perf(Ps):
             Ps[s].terminate()
 
 
-def run(hyper_parameter_map, model_return):
+def run_model(hyper_parameter_map, model_return):
+    """
+    This run level does timing, handles model parameters,
+    and dispatches to the user model.
+    """
     start = time.time()
     global logger
     logger = get_logger(logger, "MODEL RUNNER")
 
     logger.debug("run(): START:")
 
-    directory = hyper_parameter_map[
-        "instance_directory"]  # should be output_dir
-    os.chdir(directory)
-
-    with open(directory + "/rank.txt", "w") as fp:
-        fp.write(str(os.getenv("ADLB_RANK_SELF")) + "\n")
-
-    framework = hyper_parameter_map['framework']
+    framework = hyper_parameter_map["framework"]
     log("framework:   " + str(framework))
-    model_name = hyper_parameter_map['model_name']
+    model_name = hyper_parameter_map["model_name"]
     pkg = import_pkg(framework, model_name)
 
     runner_utils.format_params(hyper_parameter_map)
@@ -178,9 +175,6 @@ def run(hyper_parameter_map, model_return):
 
     Ps = setup_perf(params)
 
-    history = None
-    exception = False
-
     # check for epochs if not present set to 1,
     # used for checking early stopping in function get_results
     if "epochs" in hyper_parameter_map:
@@ -189,52 +183,28 @@ def run(hyper_parameter_map, model_return):
         epochs = 1
 
     log("PKG RUN START")
-    if framework == "keras":
+    sys.stdout.flush()
 
-        try:
-            # Run the model!
-            history = pkg.run(params)
-        except Exception as e:
-            logger.info("RUN EXCEPTION: " + str(e))
-            print("RUN EXCEPTION: " + str(e))
-            info = sys.exc_info()
-            s = traceback.format_tb(info[2])
-            # This produces backslashes in output like "\n\n"
-            #      on Frontier 2023-02-26
-            # sys.stdout.write('\\n\\nEXCEPTION in model run(): \\n' +
-            #                  repr(e) + ' ... \\n' + ''.join(s))
-            # sys.stdout.write('\\n')
-            sys.stdout.write('\n\nEXCEPTION in model run(): \n' + repr(e) +
-                             ' ... \n' + ''.join(s))
-            sys.stdout.write('\n')
-            sys.stdout.flush()
-            exception = True
-            exit(1)
-        runner_utils.keras_clear_session(framework)
-
-        # Default result if there is no val_loss (as in infer.py)
-        result = 0
-        history_result = {}
-        if not exception:
-            if history is not None:
-                if history == "EPOCHS_COMPLETED_ALREADY":
-                    result, history_result = "EPOCHS_COMPLETED_ALREADY", None
-                else:
-                    result, history_result = get_results(
-                        history, model_return, epochs)
-        else:
-            result, history_result = "RUN_EXCEPTION", None
-
-    elif framework == 'pytorch':
-        val_scores, infer_scores = pkg.run(params)
-
-        class history:
-
-            def __init__(self, val_scores):
-                self.history = {'val_loss': [val_scores['val_loss']]}
-
-        history = history(val_scores)
-        result, history_result = get_results(history, model_return, epochs)
+    history = None
+    exception = False
+    try:
+        if framework == "keras":
+            result, history_result = run_tensorflow(params, pkg)
+        elif framework == "pytorch":
+            result, history_result = run_pytorch(params, pkg)
+        # Other values of framework are caught in import_pkg()
+    except Exception as e:
+        # Handle exceptions in model codes here:
+        logger.info("RUN EXCEPTION: " + str(e))
+        print("RUN EXCEPTION: " + str(e))
+        info = sys.exc_info()
+        s = traceback.format_tb(info[2])
+        sys.stdout.write('\n\nEXCEPTION in model run(): \n' + repr(e) +
+                         ' ... \n' + ''.join(s))
+        sys.stdout.write('\n')
+        sys.stdout.flush()
+        exception = True
+        exit(1)
 
     stop_perf(Ps)
     finish = time.time()
@@ -246,6 +216,41 @@ def run(hyper_parameter_map, model_return):
     log("PKG RUN STOP")
     sys.stdout.flush()
 
+    return (result, history_result)
+
+
+def run_tensorflow(params, pkg):
+    # Run the model!
+    history = pkg.run(params)
+
+    runner_utils.keras_clear_session("keras")
+
+    # Default result if there is no val_loss (as in infer.py)
+    result = 0
+    history_result = {}
+    if not exception:
+        if history is not None:
+            if history == "EPOCHS_COMPLETED_ALREADY":
+                result, history_result = "EPOCHS_COMPLETED_ALREADY", None
+            else:
+                result, history_result = get_results(
+                    history, model_return, epochs)
+    else:
+        result, history_result = "RUN_EXCEPTION", None
+    return (result, history_result)
+
+
+def run_pytorch(params, pkg):
+    # Run the model!
+    val_scores, infer_scores = pkg.run(params)
+
+    class history:
+
+        def __init__(self, val_scores):
+            self.history = {'val_loss': [val_scores['val_loss']]}
+
+    history = history(val_scores)
+    result, history_result = get_results(history, model_return, epochs)
     return (result, history_result)
 
 
@@ -286,7 +291,11 @@ def run_post(hyper_parameter_map, output_map):
         logger.debug("POST RUN STOP")
 
 
-def run_model(hyper_parameter_map):
+def run_wrapper(hyper_parameter_map):
+    """
+    This run level writes to the run directory before and after
+    the run, invokes the pre/post methods, and invokes run_model()
+    """
     # In-memory Python runs may not create sys.argv
     if "argv" not in dir(sys):
         # This is needed for CANDLE Benchmarks finalize_parameters():
@@ -317,7 +326,14 @@ def run_model(hyper_parameter_map):
     else:
         assert result == ModelResult.SUCCESS  # proceed...
 
-    result, history = run(hyper_parameter_map, model_return)
+    directory = hyper_parameter_map["instance_directory"]
+    os.chdir(directory)  # should be output_dir
+
+    with open(directory + "/rank.txt", "w") as fp:
+        fp.write(str(os.getenv("ADLB_RANK_SELF")) + "\n")
+
+    result, history = run_model(hyper_parameter_map, model_return)
+
     runner_utils.write_output(result, directory)
     runner_utils.write_output(
         json.dumps(history, cls=runner_utils.FromNPEncoder), directory,
@@ -429,4 +445,4 @@ if __name__ == "__main__":
     # if (not hasattr(sys, 'argv')) or (len(sys.argv) == 0):
     # sys.argv  = ['nt3_tc1']
     sys.argv = ["null"]
-    run_model(hyper_parameter_map)
+    run_wrapper(hyper_parameter_map)

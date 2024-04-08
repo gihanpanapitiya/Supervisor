@@ -46,8 +46,8 @@ printf("TURBINE_OUTPUT: " + turbine_output);
 
 string restart_number = argv("restart_number", "1");
 
-string FRAMEWORK = getenv("FRAMEWORK");
-assert(FRAMEWORK != "", "workflow.swift: Set FRAMEWORK!");
+string FRAMEWORK = getenv("CANDLE_FRAMEWORK");
+assert(FRAMEWORK != "", "workflow.swift: Set CANDLE_FRAMEWORK!");
 
 // Entry point:
 main {
