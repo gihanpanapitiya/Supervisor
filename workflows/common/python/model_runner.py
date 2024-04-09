@@ -189,9 +189,11 @@ def run_model(hyper_parameter_map, model_return):
     exception = False
     try:
         if framework == "keras":
-            result, history_result = run_tensorflow(params, pkg)
+            result, history_result = \
+                run_tensorflow(params, pkg, epochs, model_return)
         elif framework == "pytorch":
-            result, history_result = run_pytorch(params, pkg)
+            result, history_result = \
+                run_pytorch(params, pkg, epochs, model_return)
         # Other values of framework are caught in import_pkg()
     except Exception as e:
         # Handle exceptions in model codes here:
@@ -219,7 +221,7 @@ def run_model(hyper_parameter_map, model_return):
     return (result, history_result)
 
 
-def run_tensorflow(params, pkg):
+def run_tensorflow(params, pkg, epochs, model_return):
     # Run the model!
     history = pkg.run(params)
 
@@ -228,21 +230,20 @@ def run_tensorflow(params, pkg):
     # Default result if there is no val_loss (as in infer.py)
     result = 0
     history_result = {}
-    if not exception:
-        if history is not None:
-            if history == "EPOCHS_COMPLETED_ALREADY":
-                result, history_result = "EPOCHS_COMPLETED_ALREADY", None
-            else:
-                result, history_result = get_results(
-                    history, model_return, epochs)
+    if history is not None:
+        if history == "EPOCHS_COMPLETED_ALREADY":
+            result, history_result = "EPOCHS_COMPLETED_ALREADY", None
+        else:
+            result, history_result = \
+                get_results(history, model_return, epochs)
     else:
         result, history_result = "RUN_EXCEPTION", None
     return (result, history_result)
 
 
-def run_pytorch(params, pkg):
+def run_pytorch(params, pkg, epochs, model_return):
     # Run the model!
-    val_scores, infer_scores = pkg.run(params)
+    val_scores = pkg.run(params)
 
     class history:
 
