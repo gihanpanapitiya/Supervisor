@@ -843,6 +843,8 @@ signature()
 # Variable values (typically ${*}) to be assigned to X Y Z
 # Use -H MESSAGE to provide an additional help message
 # Use -v for verbose logging of argument assignments
+# Example: Assigns to X Y Z: Requires 3 arguments:
+#     signature $0 X Y Z - ${*}
 {
   local L # The list of variable names
   L=()
@@ -878,12 +880,16 @@ signature()
     fi
     exit 1
   fi
-  local VARIABLE
+  local VARIABLE COUNTER=1
   for VARIABLE in ${L[@]}
   do
-    (( VERBOSE )) && echo "$SELF: signature(): $VARIABLE=$1"
+    if (( VERBOSE ))
+    then
+      echo "$SELF: signature(): [${COUNTER}] $VARIABLE=$1"
+    fi
     eval $VARIABLE=$1
     shift
+    (( COUNTER++ ))
   done
 }
 
