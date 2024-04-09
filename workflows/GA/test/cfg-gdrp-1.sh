@@ -6,15 +6,16 @@
 
 export MODEL_NAME=graphdrp
 export MODEL_PYTHON_DIR=$HOME/proj/GraphDRP
+export MODEL_RETURN=val_loss
 
 export PARAM_SET_FILE=graphdrp_param_space-3.json
 
-export FRAMEWORK="keras"
+export CANDLE_FRAMEWORK="pytorch"
 
 # SMALL:
-export PROCS=4
-export POPULATION_SIZE=4
-export NUM_ITERATIONS=3
+export PROCS=3
+export POPULATION_SIZE=2
+export NUM_ITERATIONS=2
 
 # # MEDIUM:
 # export PROCS=4
